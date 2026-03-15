@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
   CircleMarker,
   Tooltip,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { Gauge, TileLayerOption, ActiveLayers } from "@/lib/types";
-import { getRainfallColor, getStageColor } from "@/lib/colors";
-import GaugeDetail from "./GaugeDetail";
+import { Gauge, TileLayerOption, ActiveLayers, FlyToTarget } from "@/lib/types";
+import { getRainfallColor, getStageColor, getTemperatureColor } from "@/lib/colors";
 import Legend from "./Legend";
+import LocateMe from "./LocateMe";
 
 const TILE_URLS: Record<TileLayerOption, { url: string; attribution: string }> =
   {
@@ -42,6 +43,9 @@ interface MapProps {
   gauges: Gauge[];
   activeLayers: ActiveLayers;
   tileLayer: TileLayerOption;
+  onSelectGauge: (gauge: Gauge) => void;
+  onDeselectGauge: () => void;
+  flyToTarget: FlyToTarget | null;
 }
 
 function MapClickHandler({ onMapClick }: { onMapClick: () => void }) {
@@ -51,10 +55,65 @@ function MapClickHandler({ onMapClick }: { onMapClick: () => void }) {
   return null;
 }
 
-export default function Map({ gauges, activeLayers, tileLayer }: MapProps) {
-  const [selectedGauge, setSelectedGauge] = useState<Gauge | null>(null);
+function FlyToHandler({ target }: { target: FlyToTarget | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], 14, { duration: 1.2 });
+    }
+  }, [target, map]);
+  return null;
+}
 
+export default function Map({
+  gauges,
+  activeLayers,
+  tileLayer,
+  onSelectGauge,
+  onDeselectGauge,
+  flyToTarget,
+}: MapProps) {
   const tile = TILE_URLS[tileLayer];
+
+  const temperatureMarkers = useMemo(() => {
+    if (!activeLayers.temperature) return null;
+    return gauges
+      .filter((g) => g.temperature !== null)
+      .map((gauge) => {
+        const { color, radius, opacity } = getTemperatureColor(gauge.temperature);
+        return (
+          <CircleMarker
+            key={`temp-${gauge.siteNumber}`}
+            center={[gauge.lat, gauge.lng]}
+            radius={radius}
+            pathOptions={{
+              fillColor: color,
+              fillOpacity: opacity,
+              color: "transparent",
+              weight: 0,
+            }}
+            eventHandlers={{
+              click: (e) => {
+                e.originalEvent.stopPropagation();
+                onSelectGauge(gauge);
+              },
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -8]}>
+              <div className="text-xs">
+                <div className="font-semibold">{gauge.siteName}</div>
+                <div>
+                  Temp:{" "}
+                  {gauge.temperature !== null
+                    ? `${gauge.temperature.toFixed(1)}°F`
+                    : "—"}
+                </div>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        );
+      });
+  }, [gauges, activeLayers.temperature, onSelectGauge]);
 
   const rainfallMarkers = useMemo(() => {
     if (!activeLayers.rainfall) return null;
@@ -76,7 +135,7 @@ export default function Map({ gauges, activeLayers, tileLayer }: MapProps) {
             eventHandlers={{
               click: (e) => {
                 e.originalEvent.stopPropagation();
-                setSelectedGauge(gauge);
+                onSelectGauge(gauge);
               },
             }}
           >
@@ -94,7 +153,7 @@ export default function Map({ gauges, activeLayers, tileLayer }: MapProps) {
           </CircleMarker>
         );
       });
-  }, [gauges, activeLayers.rainfall]);
+  }, [gauges, activeLayers.rainfall, onSelectGauge]);
 
   const stageFlowMarkers = useMemo(() => {
     if (!activeLayers.stageFlow) return null;
@@ -120,7 +179,7 @@ export default function Map({ gauges, activeLayers, tileLayer }: MapProps) {
             eventHandlers={{
               click: (e) => {
                 e.originalEvent.stopPropagation();
-                setSelectedGauge(gauge);
+                onSelectGauge(gauge);
               },
             }}
           >
@@ -139,7 +198,7 @@ export default function Map({ gauges, activeLayers, tileLayer }: MapProps) {
           </CircleMarker>
         );
       });
-  }, [gauges, activeLayers.stageFlow]);
+  }, [gauges, activeLayers.stageFlow, onSelectGauge]);
 
   return (
     <div className="relative w-full h-full">
@@ -150,19 +209,15 @@ export default function Map({ gauges, activeLayers, tileLayer }: MapProps) {
         zoomControl={false}
       >
         <TileLayer key={tileLayer} url={tile.url} attribution={tile.attribution} />
-        <MapClickHandler onMapClick={() => setSelectedGauge(null)} />
+        <MapClickHandler onMapClick={onDeselectGauge} />
+        <FlyToHandler target={flyToTarget} />
+        <LocateMe />
+        {temperatureMarkers}
         {rainfallMarkers}
         {stageFlowMarkers}
       </MapContainer>
 
       <Legend activeLayers={activeLayers} />
-
-      {selectedGauge && (
-        <GaugeDetail
-          gauge={selectedGauge}
-          onClose={() => setSelectedGauge(null)}
-        />
-      )}
     </div>
   );
 }

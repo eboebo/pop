@@ -52,4 +52,39 @@ export type TileLayerOption = "dark" | "terrain" | "satellite" | "street";
 export interface ActiveLayers {
   rainfall: boolean;
   stageFlow: boolean;
+  temperature: boolean;
+}
+
+export interface FlyToTarget {
+  lat: number;
+  lng: number;
+  key: number;
+}
+
+// Site history (2-week detail endpoint)
+export type LCRASiteType = "flow" | "rain" | "lakelevel" | "temp" | "humidity";
+
+export interface SiteHistoryRecord {
+  dateTime: string;
+  value1: number | null;
+  value2: number | null;
+}
+
+export interface SiteHistoryResponse {
+  siteId: number;
+  siteNumber: string;
+  siteName: string;
+  bankFullStage: number | null;
+  floodStage: number | null;
+  value1Type: string;
+  value2Type: string;
+  records: SiteHistoryRecord[];
+}
+
+// Lake levels
+export interface LakeLevel {
+  siteNumber: number;
+  location: string;
+  dateTime: string;
+  elevation: number;
 }

@@ -7,6 +7,9 @@ interface LegendProps {
 }
 
 export default function Legend({ activeLayers }: LegendProps) {
+  const anyActive =
+    activeLayers.rainfall || activeLayers.stageFlow || activeLayers.temperature;
+
   return (
     <div className="absolute bottom-4 right-4 z-[1000] rounded-xl bg-[#1a2736]/90 backdrop-blur-md border border-[#2a3a4e] p-3 text-xs">
       {activeLayers.rainfall && (
@@ -36,7 +39,7 @@ export default function Legend({ activeLayers }: LegendProps) {
       )}
 
       {activeLayers.stageFlow && (
-        <div>
+        <div className="mb-2 last:mb-0">
           <div className="text-[#3dd68c] font-semibold uppercase tracking-wider mb-1.5 text-[10px]">
             Stage Level
           </div>
@@ -59,7 +62,33 @@ export default function Legend({ activeLayers }: LegendProps) {
         </div>
       )}
 
-      {!activeLayers.rainfall && !activeLayers.stageFlow && (
+      {activeLayers.temperature && (
+        <div className="mb-2 last:mb-0">
+          <div className="text-[#ff8a3d] font-semibold uppercase tracking-wider mb-1.5 text-[10px]">
+            Temperature
+          </div>
+          <div className="flex flex-col gap-1">
+            {[
+              { color: "#7ecbff", label: "< 32°F" },
+              { color: "#5b9aff", label: "32–50°F" },
+              { color: "#3dd68c", label: "50–70°F" },
+              { color: "#ffb74d", label: "70–85°F" },
+              { color: "#ff8a3d", label: "85–100°F" },
+              { color: "#ff5252", label: "100°F+" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-1.5">
+                <span
+                  className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-[#8899aa]">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!anyActive && (
         <div className="text-[#8899aa]">No layers active</div>
       )}
     </div>

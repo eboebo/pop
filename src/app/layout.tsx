@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NavBar from "@/components/NavBar";
 
 export const metadata: Metadata = {
-  title: "LCRA Hydromet — River Basin Monitor",
-  description:
-    "Live rainfall and river stage/flow data from LCRA Hydromet gauges across the Lower Colorado River basin.",
+  title: "PopPop",
+  description: "A little app for PopPop.",
 };
 
 export default function RootLayout({
@@ -30,7 +30,10 @@ export default function RootLayout({
         className="antialiased"
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
-        {children}
+        <div className="h-screen w-screen flex flex-col overflow-hidden">
+          <NavBar />
+          {children}
+        </div>
       </body>
     </html>
   );
